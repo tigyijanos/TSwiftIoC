@@ -37,4 +37,4 @@ jobs:
       if: github.ref == 'refs/heads/main'
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-      run: nuget push ./nupkg/*.nupkg -ApiKey $NUGET_API_KEY -Source https://api.nuget.org/v3/index.json
+      run: nuget push ./nupkg/*.nupkg -ApiKey $NUGET_API_KEY -Source https://api.nuget.org/v3/index.json 
