@@ -1,5 +1,4 @@
 name: .NET NuGet Package
-
 on:
   push:
     branches:
@@ -11,7 +10,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    environment: NUGET_API_KEY
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -38,3 +37,4 @@ jobs:
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
       run: nuget push ./nupkg/*.nupkg -ApiKey $NUGET_API_KEY -Source https://api.nuget.org/v3/index.json 
+      
