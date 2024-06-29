@@ -19,7 +19,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v2
       with:
-        dotnet-version: '7.x'  # Válaszd ki a megfelelő .NET verziót
+        dotnet-version: '8.0' 
 
     - name: Restore dependencies
       run: dotnet restore
