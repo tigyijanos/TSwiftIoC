@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>TSwiftIoC</id>
+    <version>1.0.0</version>
+    <authors>Janos Tigyi</authors>
+    <owners>Janos Tigyi</owners>
+    <licenseUrl>https://opensource.org/licenses/MIT</licenseUrl>
+    <projectUrl>https://github.com/tigyijanos/TSwiftIoC</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>TSwiftIoC is a simple and flexible Inversion of Control (IoC) container for .NET applications. It provides a way to register and resolve dependencies, supporting various lifetimes and constructor dependency resolution.</description>
+    <tags>IoC DI DependencyInjection .NET CSharp</tags>
+  </metadata>
+  <files>
+    <file src="bin\Release\net8.0\TSwiftIoC.dll" target="lib\net8.0\" />
+    <file src="bin\Release\net8.0\TSwiftIoC.pdb" target="lib\net8.0\" />
+  </files>
+</package>

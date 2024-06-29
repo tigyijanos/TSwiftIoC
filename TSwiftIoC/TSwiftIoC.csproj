@@ -4,6 +4,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <PackageProjectUrl></PackageProjectUrl>
+    <RepositoryUrl>https://github.com/tigyijanos/TSwiftIoC</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>ioc;simpleioc;dependency;injection</PackageTags>
+    <Title>TSiwftIoC</Title>
   </PropertyGroup>
 
 </Project>
