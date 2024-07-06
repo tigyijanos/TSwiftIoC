@@ -2,7 +2,7 @@
 
 namespace TSwiftIoC.Tests.Models
 {
-    public class CustomTSwiftIoC : TSwiftIoC, ITSwiftIoC
+    public class CustomTSwiftIoC : TSwiftContainer, ITSwiftContainer
     {
     }
 }

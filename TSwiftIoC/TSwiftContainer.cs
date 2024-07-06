@@ -5,29 +5,29 @@ using TSwiftIoC.Interfaces;
 
 namespace TSwiftIoC
 {
-    public class TSwiftIoC : ITSwiftIoC
+    public class TSwiftContainer : ITSwiftContainer
     {
-        protected static Type? IoCType { get; set; } = typeof(TSwiftIoC);
-        protected static ITSwiftIoC? _instance;
+        protected static Type? IoCType { get; set; } = typeof(TSwiftContainer);
+        protected static ITSwiftContainer? _instance;
         protected readonly ConcurrentDictionary<RegistrationKey, Registration> _registrations = new();
 
-        public static ITSwiftIoC? Instance
+        public static ITSwiftContainer? Instance
         {
             get
             {
-                if(IoCType == null)
+                if (IoCType == null)
                 {
                     return null;
                 }
 
                 if (_instance == null)
                 {
-                    lock (typeof(TSwiftIoC))
+                    lock (typeof(TSwiftContainer))
                     {
                         if (_instance == null)
                         {
                             var instance = Activator.CreateInstance(IoCType);
-                            _instance = instance != null ? (ITSwiftIoC)instance : null;
+                            _instance = instance != null ? (ITSwiftContainer)instance : null;
                         }
                     }
                 }
@@ -39,7 +39,7 @@ namespace TSwiftIoC
             }
         }
 
-        public static void SetIoCType<T>() where T : ITSwiftIoC
+        public static void SetIoCType<T>() where T : ITSwiftContainer
         {
             IoCType = typeof(T);
             ClearRegistrations();
@@ -142,9 +142,31 @@ namespace TSwiftIoC
             return instance;
         }
 
+        public virtual void Unregister<Interface>(string? key = null)
+        {
+            var registrationKey = new RegistrationKey(typeof(Interface), key);
+            _registrations.TryRemove(registrationKey, out _);
+        }
+
+        public virtual void ReInitialize<Interface>(string? key = null)
+        {
+            var registrationKey = new RegistrationKey(typeof(Interface), key);
+            if (!_registrations.TryGetValue(registrationKey, out Registration? registration))
+            {
+                throw new InvalidOperationException($"Type {typeof(Interface).Name} not registered with key {key ?? "default"}");
+            }
+
+            if (registration.Lifetime != Lifetime.Singleton)
+            {
+                throw new InvalidOperationException($"ReInitialize can only be called for singleton registrations.");
+            }
+
+            registration.Instance = CreateInstance(typeof(Interface), registration.ResolveConstructorDependencies, key);
+        }
+
         protected static void ClearRegistrations()
         {
-            if (_instance is TSwiftIoC container)
+            if (_instance is TSwiftContainer container)
             {
                 container._registrations.Clear();
             }

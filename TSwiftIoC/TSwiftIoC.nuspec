@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>TSwiftIoC</id>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <authors>Janos Tigyi</authors>
     <owners>Janos Tigyi</owners>
     <licenseUrl>https://opensource.org/licenses/MIT</licenseUrl>

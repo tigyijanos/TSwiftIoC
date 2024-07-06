@@ -12,14 +12,14 @@ namespace TSwiftIoC.Tests
         public TSwiftIoCTests()
         {
             // Ensure IoC container is reset before each test
-            TSwiftIoC.Instance = null;
+            TSwiftContainer.Instance = null;
         }
 
         [Fact]
         public void Register_And_Resolve_Singleton_Instance_Success()
         {
             // Arrange
-            var container = TSwiftIoC.Instance;
+            var container = TSwiftContainer.Instance;
             container!.Register<IService, ServiceImplementation>(lifetime: Lifetime.Singleton, initializeOnRegister: true);
 
             // Act
@@ -36,7 +36,7 @@ namespace TSwiftIoC.Tests
         public void Register_And_Resolve_Transient_Instance_Success()
         {
             // Arrange
-            var container = TSwiftIoC.Instance;
+            var container = TSwiftContainer.Instance;
             container!.Register<IService, ServiceImplementation>(lifetime: Lifetime.PerRequest);
 
             // Act
@@ -54,7 +54,7 @@ namespace TSwiftIoC.Tests
         public void Register_With_Key_And_Resolve_Success()
         {
             // Arrange
-            var container = TSwiftIoC.Instance;
+            var container = TSwiftContainer.Instance;
             container!.Register<IService, ServiceImplementation>("key1");
             container.Register<IService, AnotherServiceImplementation>("key2");
 
@@ -71,7 +71,7 @@ namespace TSwiftIoC.Tests
         public void Register_Duplicate_Without_Key_Throws_Exception()
         {
             // Arrange
-            var container = TSwiftIoC.Instance;
+            var container = TSwiftContainer.Instance;
             container!.Register<IService, ServiceImplementation>();
 
             // Act & Assert
@@ -82,7 +82,7 @@ namespace TSwiftIoC.Tests
         public void Register_Duplicate_With_Same_Key_Throws_Exception()
         {
             // Arrange
-            var container = TSwiftIoC.Instance;
+            var container = TSwiftContainer.Instance;
             container!.Register<IService, ServiceImplementation>("key");
 
             // Act & Assert
@@ -93,7 +93,7 @@ namespace TSwiftIoC.Tests
         public void Resolve_Not_Registered_Throws_Exception()
         {
             // Arrange
-            var container = TSwiftIoC.Instance;
+            var container = TSwiftContainer.Instance;
 
             // Act & Assert
             Assert.Throws<InvalidOperationException>(() => container!.Resolve<IService>());
@@ -103,7 +103,7 @@ namespace TSwiftIoC.Tests
         public void Register_Thausand_Of_Services()
         {
             // Arrange
-            var container = TSwiftIoC.Instance;
+            var container = TSwiftContainer.Instance;
             var x = 0;
 
             // Act & Assert
@@ -119,10 +119,10 @@ namespace TSwiftIoC.Tests
         public void Custom_IoC_Type()
         {
             // Arrange
-            TSwiftIoC.SetIoCType<CustomTSwiftIoC>();
+            TSwiftContainer.SetIoCType<CustomTSwiftIoC>();
 
             // Act
-            var i = TSwiftIoC.Instance;
+            var i = TSwiftContainer.Instance;
 
             // Assert
             Assert.IsType<CustomTSwiftIoC>(i);
@@ -132,7 +132,7 @@ namespace TSwiftIoC.Tests
         public void Register_Assembly_Success()
         {
             // Arrange
-            var container = TSwiftIoC.Instance;
+            var container = TSwiftContainer.Instance;
             var testAssembly = Assembly.GetAssembly(typeof(IService1));
 
             // Act
@@ -150,7 +150,7 @@ namespace TSwiftIoC.Tests
         public void Register_Resolve_Constructor_Params_Success()
         {
             // Arrange
-            var container = TSwiftIoC.Instance;
+            var container = TSwiftContainer.Instance;
 
             // Act
             container!.Register<IServiceInConstructorParam, ServiceInConstructorParam>(resolveConstructorDependencies: true);
@@ -169,7 +169,7 @@ namespace TSwiftIoC.Tests
         public void Register_Dont_Resolve_Constructor_Params_Success()
         {
             // Arrange
-            var container = TSwiftIoC.Instance;
+            var container = TSwiftContainer.Instance;
 
             // Act
             container!.Register<IServiceInConstructorParam, ServiceInConstructorParam>();
@@ -181,6 +181,38 @@ namespace TSwiftIoC.Tests
             Assert.IsType<ServiceImplementationParameteredConstructor>(service1);
             Assert.NotNull(service1);
             Assert.Null(service1.Param);
+        }
+
+        [Fact]
+        public void Unregister_Success()
+        {
+            // Arrange
+            var container = TSwiftContainer.Instance;
+            container!.Register<IService, ServiceImplementation>();
+
+            // Act
+            container.Unregister<IService>();
+
+            // Assert
+            Assert.Throws<InvalidOperationException>(() => container.Resolve<IService>());
+        }
+
+        [Fact]
+        public void ReInitialize_Success()
+        {
+            // Arrange
+            var container = TSwiftContainer.Instance;
+            container!.Register<IService, ServiceImplementation>(lifetime: Lifetime.Singleton, initializeOnRegister: true);
+            var service1 = container.Resolve<IService>();
+            var originalGuid = service1!.Guid;
+
+            // Act
+            container.ReInitialize<IService>();
+            var service2 = container.Resolve<IService>();
+
+            // Assert
+            Assert.NotNull(service2);
+            Assert.NotEqual(originalGuid, service2!.Guid); // ReInitialize should create a new instance
         }
     }  
 }
