@@ -1,4 +1,4 @@
-name: .NET NuGet Package
+name: .NET NuGet Build
 on:
   push:
     branches:
@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: NUGET_API_KEY
+    environment: ENV1
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
