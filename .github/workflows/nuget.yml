@@ -31,7 +31,7 @@ jobs:
     - name: Publish to GitHub Packages
       env:
         GITHUB_TOKEN: ${{ secrets.GH_NUGET_PUBL_TOKEN }}
-      run: nuget push ./nupkg/*.nupkg -ApiKey $GITHUB_TOKEN --source https://nuget.pkg.github.com/tigyijanos/index.json
+      run: nuget push ./nupkg/*.nupkg -ApiKey $GITHUB_TOKEN -Source https://nuget.pkg.github.com/tigyijanos/index.json
 
     - name: Publish to NuGet org
       env:
