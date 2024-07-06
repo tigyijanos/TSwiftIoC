@@ -29,7 +29,6 @@ jobs:
       run: nuget pack TSwiftIoC/TSwiftIoC.nuspec -OutputDirectory ./nupkg
 
     - name: Publish to NuGet
-      if: github.ref == 'refs/heads/main'
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
       run: nuget push ./nupkg/*.nupkg -ApiKey $NUGET_API_KEY -Source https://api.nuget.org/v3/index.json 
