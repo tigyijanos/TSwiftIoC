@@ -28,8 +28,15 @@ jobs:
     - name: Pack
       run: nuget pack TSwiftIoC/TSwiftIoC.nuspec -OutputDirectory ./nupkg
 
-    - name: Publish to NuGet
+    - name: Publish to GitHub Packages
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_NUGET_PUBL_TOKEN }}
+      run: nuget push ./nupkg/*.nupkg -ApiKey $GITHUB_TOKEN --source https://nuget.pkg.github.com/tigyijanos/index.json
+
+    - name: Publish to NuGet org
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
       run: nuget push ./nupkg/*.nupkg -ApiKey $NUGET_API_KEY -Source https://api.nuget.org/v3/index.json 
+
+    
       
