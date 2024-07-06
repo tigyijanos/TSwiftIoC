@@ -1,4 +1,4 @@
-name: .NET NuGet Build
+name: Build and RUN tests
 on:
   push:
     branches:
