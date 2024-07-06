@@ -1,4 +1,4 @@
-name: .NET NuGet Package
+name: Build and Publish nuget package
 on:
   release:
     types: [created]
