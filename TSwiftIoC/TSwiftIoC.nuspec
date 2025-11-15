@@ -2,14 +2,24 @@
 <package >
   <metadata>
     <id>TSwiftIoC</id>
-    <version>1.0.2</version>
+    <version>2.0.0</version>
     <authors>Janos Tigyi</authors>
     <owners>Janos Tigyi</owners>
     <licenseUrl>https://opensource.org/licenses/MIT</licenseUrl>
     <projectUrl>https://github.com/tigyijanos/TSwiftIoC</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>TSwiftIoC is a simple and flexible Inversion of Control (IoC) container for .NET applications. It provides a way to register and resolve dependencies, supporting various lifetimes and constructor dependency resolution.</description>
-    <tags>IoC DI DependencyInjection .NET CSharp</tags>
+    <description>TSwiftIoC is a high-performance, feature-rich Inversion of Control (IoC) container for .NET applications. Features include compiled expression trees for ultra-fast instance creation (~10x faster), scoped lifetimes, property injection, factory registration, circular dependency detection, and comprehensive dependency resolution. Supports Singleton, PerRequest, and Scoped lifetimes with thread-safe AsyncLocal scope management.</description>
+    <releaseNotes>
+      v2.0.0: Major performance improvements and new features
+      - Compiled expression trees for 10x faster instance creation
+      - Scoped lifetime support with BeginScope/EndScope
+      - Property injection via [Inject] attribute
+      - Factory registration with RegisterFactory
+      - Circular dependency detection
+      - ResolveAll and IsRegistered methods
+      - Up to 9x faster resolution in benchmarks
+    </releaseNotes>
+    <tags>IoC DI DependencyInjection .NET CSharp PerformanceOptimized Scoped PropertyInjection FactoryPattern</tags>
   </metadata>
   <files>
     <file src="bin\Release\net8.0\TSwiftIoC.dll" target="lib\net8.0\" />
