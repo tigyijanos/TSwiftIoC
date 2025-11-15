@@ -2,6 +2,22 @@
 
 TSwiftIoC is a **high-performance**, feature-rich Inversion of Control (IoC) container for .NET applications. It provides fast dependency injection with advanced features like scoped lifetimes, property injection, circular dependency detection, and compiled expression trees for optimal performance.
 
+## 🎯 Quick Start
+
+```csharp
+using TSwiftIoC;
+using TSwiftIoC.Enums;
+
+// Register services
+TSwiftContainer.Instance.Register<ILogger, ConsoleLogger>();
+TSwiftContainer.Instance.Register<IDatabase, SqlDatabase>(lifetime: Lifetime.Scoped);
+TSwiftContainer.Instance.Register<IService, MyService>(resolveConstructorDependencies: true);
+
+// Resolve and use
+var service = TSwiftContainer.Instance.Resolve<IService>();
+service.DoWork();
+```
+
 ## ⚡ Performance Optimizations
 
 - **Compiled Expression Trees** - Ultra-fast instance creation, much faster than `Activator.CreateInstance`
