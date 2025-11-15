@@ -10,23 +10,35 @@ namespace TSwiftIoC
         public object? Instance { get; set; }
         public Lifetime Lifetime { get; }
         public bool ResolveConstructorDependencies { get; }
+        public bool InjectProperties { get; }
         
         // Performance optimization: Cache compiled factory function
         private Func<object>? _cachedFactory;
         private ConstructorInfo? _cachedConstructor;
+        private PropertyInfo[]? _injectableProperties;
         private readonly object _factoryLock = new object();
 
-        public Registration(Type implementationType, Lifetime lifetime, bool resolveConstructorDependencies)
+        public Registration(Type implementationType, Lifetime lifetime, bool resolveConstructorDependencies, bool injectProperties = false)
         {
             ImplementationType = implementationType;
             Lifetime = lifetime;
             Instance = null;
             ResolveConstructorDependencies = resolveConstructorDependencies;
+            InjectProperties = injectProperties;
             
             // Pre-cache parameterless constructor info if not resolving dependencies
             if (!resolveConstructorDependencies)
             {
                 _cachedConstructor = implementationType.GetConstructor(Type.EmptyTypes);
+            }
+
+            // Pre-cache injectable properties
+            if (injectProperties)
+            {
+                _injectableProperties = implementationType
+                    .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(p => p.CanWrite && p.GetCustomAttribute<InjectAttribute>() != null)
+                    .ToArray();
             }
         }
 
@@ -36,6 +48,7 @@ namespace TSwiftIoC
             Instance = instance;
             Lifetime = Lifetime.Singleton;
             ResolveConstructorDependencies = false;
+            InjectProperties = false;
         }
 
         /// <summary>
@@ -84,6 +97,14 @@ namespace TSwiftIoC
         public void CacheConstructor(ConstructorInfo constructor)
         {
             _cachedConstructor = constructor;
+        }
+
+        /// <summary>
+        /// Gets properties that should be injected
+        /// </summary>
+        public PropertyInfo[] GetInjectableProperties()
+        {
+            return _injectableProperties ?? Array.Empty<PropertyInfo>();
         }
     }
 }

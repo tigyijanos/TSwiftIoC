@@ -25,7 +25,8 @@ namespace TSwiftIoC.Interfaces
         /// <param name="lifetime">The lifetime of the registered type.</param>
         /// <param name="initializeOnRegister">Specifies whether to initialize the instance upon registration.</param>
         /// <param name="resolveConstructorDependencies">Specifies whether to resolve constructor dependencies when creating instances.</param>
-        void Register<Interface, Type>(string? key = null, Lifetime lifetime = Lifetime.Singleton, bool initializeOnRegister = false, bool resolveConstructorDependencies = false)
+        /// <param name="injectProperties">Specifies whether to inject properties marked with [Inject] attribute.</param>
+        void Register<Interface, Type>(string? key = null, Lifetime lifetime = Lifetime.Singleton, bool initializeOnRegister = false, bool resolveConstructorDependencies = false, bool injectProperties = false)
             where Type : class, Interface;
 
         /// <summary>

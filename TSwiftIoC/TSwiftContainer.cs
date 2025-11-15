@@ -17,6 +17,9 @@ namespace TSwiftIoC
         
         // Scoped instances storage (thread-safe)
         private readonly AsyncLocal<Dictionary<RegistrationKey, object>> _scopedInstances = new();
+        
+        // Circular dependency detection
+        private readonly AsyncLocal<Stack<Type>> _resolutionStack = new();
 
         public static ITSwiftContainer? Instance
         {
@@ -69,7 +72,7 @@ namespace TSwiftIoC
             }
         }
 
-        public virtual void Register<Interface, Type>(string? key = null, Lifetime lifetime = Lifetime.Singleton, bool initializeOnRegister = false, bool resolveConstructorDependencies = false)
+        public virtual void Register<Interface, Type>(string? key = null, Lifetime lifetime = Lifetime.Singleton, bool initializeOnRegister = false, bool resolveConstructorDependencies = false, bool injectProperties = false)
            where Type : class, Interface
         {
             var registrationKey = new RegistrationKey(typeof(Interface), key);
@@ -78,7 +81,7 @@ namespace TSwiftIoC
                 throw new InvalidOperationException($"Type {typeof(Type).Name} is already registered for interface {typeof(Interface).Name} with key {key ?? "default"}.");
             }
 
-            _registrations[registrationKey] = new Registration(typeof(Type), lifetime, resolveConstructorDependencies);
+            _registrations[registrationKey] = new Registration(typeof(Type), lifetime, resolveConstructorDependencies, injectProperties);
             if (initializeOnRegister && lifetime == Lifetime.Singleton)
             {
                 _registrations[registrationKey].Instance = CreateInstance(typeof(Interface), resolveConstructorDependencies, key);
@@ -159,7 +162,7 @@ namespace TSwiftIoC
                 throw new InvalidOperationException($"Type {implementation.Name} is already registered for interface {@interface.Name}.");
             }
 
-            _registrations[registrationKey] = new Registration(implementation, lifetime, resolveConstructorDependencies);
+            _registrations[registrationKey] = new Registration(implementation, lifetime, resolveConstructorDependencies, false);
         }
 
         protected virtual object? Resolve(Type type, string? key = null)
@@ -189,7 +192,7 @@ namespace TSwiftIoC
                         return scopedInstance;
                     }
 
-                    var newInstance = CreateInstance(type, registration.ResolveConstructorDependencies, key);
+                    var newInstance = CreateInstanceWithCircularDetection(type, registration.ResolveConstructorDependencies, key);
                     if (newInstance != null)
                     {
                         scopedInstances[registrationKey] = newInstance;
@@ -199,7 +202,7 @@ namespace TSwiftIoC
                 // If no scope is active, treat as PerRequest
             }
 
-            var instance = CreateInstance(type, registration.ResolveConstructorDependencies, key);
+            var instance = CreateInstanceWithCircularDetection(type, registration.ResolveConstructorDependencies, key);
             
             // Cache singleton instances
             if (registration.Lifetime == Lifetime.Singleton && instance != null)
@@ -208,6 +211,37 @@ namespace TSwiftIoC
             }
 
             return instance;
+        }
+
+        private object? CreateInstanceWithCircularDetection(Type type, bool resolveConstructorDependencies, string? key)
+        {
+            // Initialize resolution stack if needed
+            if (_resolutionStack.Value == null)
+            {
+                _resolutionStack.Value = new Stack<Type>();
+            }
+
+            var stack = _resolutionStack.Value;
+
+            // Check for circular dependency
+            if (stack.Contains(type))
+            {
+                throw new CircularDependencyException($"Circular dependency detected for type {type.Name}", stack);
+            }
+
+            try
+            {
+                stack.Push(type);
+                return CreateInstance(type, resolveConstructorDependencies, key);
+            }
+            finally
+            {
+                stack.Pop();
+                if (stack.Count == 0)
+                {
+                    _resolutionStack.Value = null!;
+                }
+            }
         }
 
         public virtual void Unregister<Interface>(string? key = null)
@@ -249,14 +283,42 @@ namespace TSwiftIoC
                 throw new InvalidOperationException($"Type {type.Name} not registered with key {key ?? "default"}");
             }
 
+            object? instance;
+            
             if (resolveConstructorDependencies)
             {
-                return CreateInstanceWithDependencies(registration);
+                instance = CreateInstanceWithDependencies(registration);
             }
             else
             {
                 // Use optimized factory method
-                return registration.CreateInstanceFast();
+                instance = registration.CreateInstanceFast();
+            }
+
+            // Inject properties if configured
+            if (instance != null && registration.InjectProperties)
+            {
+                InjectProperties(instance, registration);
+            }
+
+            return instance;
+        }
+
+        /// <summary>
+        /// Injects dependencies into properties marked with [Inject] attribute
+        /// </summary>
+        private void InjectProperties(object instance, Registration registration)
+        {
+            var properties = registration.GetInjectableProperties();
+            foreach (var property in properties)
+            {
+                var attribute = property.GetCustomAttribute<InjectAttribute>();
+                var key = attribute?.Key;
+                var value = Resolve(property.PropertyType, key);
+                if (value != null)
+                {
+                    property.SetValue(instance, value);
+                }
             }
         }
 
@@ -299,6 +361,11 @@ namespace TSwiftIoC
                     // Cache the successful constructor
                     registration.CacheConstructor(constructor);
                     return constructor.Invoke(parameterInstances);
+                }
+                catch (CircularDependencyException)
+                {
+                    // Re-throw circular dependency exceptions
+                    throw;
                 }
                 catch
                 {
