@@ -7,6 +7,7 @@ using TSwiftIoC.Tests.Models.Interfaces.Assembly;
 
 namespace TSwiftIoC.Tests
 {
+    [Collection("Sequential")]
     public class TSwiftIoCTests
     {
         public TSwiftIoCTests()

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Linq.Expressions;
 using System.Reflection;
 using TSwiftIoC.Enums;
 using TSwiftIoC.Interfaces;
@@ -10,6 +11,12 @@ namespace TSwiftIoC
         protected static Type? IoCType { get; set; } = typeof(TSwiftContainer);
         protected static ITSwiftContainer? _instance;
         protected readonly ConcurrentDictionary<RegistrationKey, Registration> _registrations = new();
+        
+        // Performance optimization: Cache resolved constructors for dependency injection
+        private readonly ConcurrentDictionary<Type, ConstructorInfo> _constructorCache = new();
+        
+        // Scoped instances storage (thread-safe)
+        private readonly AsyncLocal<Dictionary<RegistrationKey, object>> _scopedInstances = new();
 
         public static ITSwiftContainer? Instance
         {
@@ -107,6 +114,43 @@ namespace TSwiftIoC
             return default;
         }
 
+        public virtual IEnumerable<Interface> ResolveAll<Interface>()
+        {
+            var interfaceType = typeof(Interface);
+            var results = new List<Interface>();
+
+            foreach (var kvp in _registrations)
+            {
+                if (kvp.Key.InterfaceType == interfaceType)
+                {
+                    var instance = Resolve(interfaceType, kvp.Key.Key);
+                    if (instance != null)
+                    {
+                        results.Add((Interface)instance);
+                    }
+                }
+            }
+
+            return results;
+        }
+
+        public virtual bool IsRegistered<Interface>(string? key = null)
+        {
+            var registrationKey = new RegistrationKey(typeof(Interface), key);
+            return _registrations.ContainsKey(registrationKey);
+        }
+
+        public virtual void BeginScope()
+        {
+            _scopedInstances.Value = new Dictionary<RegistrationKey, object>();
+        }
+
+        public virtual void EndScope()
+        {
+            _scopedInstances.Value?.Clear();
+            _scopedInstances.Value = null!;
+        }
+
         protected virtual void Register(Type @interface, Type implementation, Lifetime lifetime, bool resolveConstructorDependencies)
         {
             var registrationKey = new RegistrationKey(@interface, null);
@@ -128,12 +172,36 @@ namespace TSwiftIoC
 
             var registration = value;
 
+            // Fast path for singleton instances
             if (registration.Instance != null)
             {
                 return registration.Instance;
             }
 
+            // Check for scoped instances
+            if (registration.Lifetime == Lifetime.Scoped)
+            {
+                var scopedInstances = _scopedInstances.Value;
+                if (scopedInstances != null)
+                {
+                    if (scopedInstances.TryGetValue(registrationKey, out var scopedInstance))
+                    {
+                        return scopedInstance;
+                    }
+
+                    var newInstance = CreateInstance(type, registration.ResolveConstructorDependencies, key);
+                    if (newInstance != null)
+                    {
+                        scopedInstances[registrationKey] = newInstance;
+                    }
+                    return newInstance;
+                }
+                // If no scope is active, treat as PerRequest
+            }
+
             var instance = CreateInstance(type, registration.ResolveConstructorDependencies, key);
+            
+            // Cache singleton instances
             if (registration.Lifetime == Lifetime.Singleton && instance != null)
             {
                 registration.Instance = instance;
@@ -169,6 +237,7 @@ namespace TSwiftIoC
             if (_instance is TSwiftContainer container)
             {
                 container._registrations.Clear();
+                container._constructorCache.Clear();
             }
         }
 
@@ -182,31 +251,62 @@ namespace TSwiftIoC
 
             if (resolveConstructorDependencies)
             {
-                var constructors = registration.ImplementationType
-                    .GetConstructors()
-                    .OrderByDescending(c => c.GetParameters().Length)
-                    .ToArray();
-
-                foreach (var constructor in constructors)
-                {
-                    try
-                    {
-                        var parameters = constructor.GetParameters();
-                        var parameterInstances = parameters.Select(param => Resolve(param.ParameterType)).ToArray();
-                        return constructor.Invoke(parameterInstances);
-                    }
-                    catch
-                    {
-                        continue;
-                    }
-                }
-
-                throw new InvalidOperationException($"No suitable constructor found for type {type.Name}");
+                return CreateInstanceWithDependencies(registration);
             }
             else
             {
-                return Activator.CreateInstance(registration.ImplementationType);
+                // Use optimized factory method
+                return registration.CreateInstanceFast();
             }
+        }
+
+        /// <summary>
+        /// Optimized method for creating instances with constructor dependency resolution
+        /// </summary>
+        private object CreateInstanceWithDependencies(Registration registration)
+        {
+            // Try to get cached constructor first
+            var cachedConstructor = registration.GetCachedConstructor();
+            if (cachedConstructor != null)
+            {
+                var parameters = cachedConstructor.GetParameters();
+                var parameterInstances = new object[parameters.Length];
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    parameterInstances[i] = Resolve(parameters[i].ParameterType)!;
+                }
+                return cachedConstructor.Invoke(parameterInstances);
+            }
+
+            // Find and cache constructor
+            var constructors = registration.ImplementationType
+                .GetConstructors()
+                .OrderByDescending(c => c.GetParameters().Length)
+                .ToArray();
+
+            foreach (var constructor in constructors)
+            {
+                try
+                {
+                    var parameters = constructor.GetParameters();
+                    var parameterInstances = new object[parameters.Length];
+                    
+                    for (int i = 0; i < parameters.Length; i++)
+                    {
+                        parameterInstances[i] = Resolve(parameters[i].ParameterType)!;
+                    }
+                    
+                    // Cache the successful constructor
+                    registration.CacheConstructor(constructor);
+                    return constructor.Invoke(parameterInstances);
+                }
+                catch
+                {
+                    continue;
+                }
+            }
+
+            throw new InvalidOperationException($"No suitable constructor found for type {registration.ImplementationType.Name}");
         }
     }
 }

@@ -59,5 +59,30 @@ namespace TSwiftIoC.Interfaces
         /// <param name="key">An optional key to distinguish multiple registrations of the same interface.</param>
         /// <returns>The resolved instance of the specified interface.</returns>
         Interface? Resolve<Interface>(string? key = null);
+
+        /// <summary>
+        /// Resolves all registered instances of the specified interface.
+        /// </summary>
+        /// <typeparam name="Interface">The interface type.</typeparam>
+        /// <returns>An enumerable of all registered instances of the specified interface.</returns>
+        IEnumerable<Interface> ResolveAll<Interface>();
+
+        /// <summary>
+        /// Checks if a type is registered with the specified key.
+        /// </summary>
+        /// <typeparam name="Interface">The interface type.</typeparam>
+        /// <param name="key">An optional key to distinguish multiple registrations of the same interface.</param>
+        /// <returns>True if the type is registered, false otherwise.</returns>
+        bool IsRegistered<Interface>(string? key = null);
+
+        /// <summary>
+        /// Begins a new scope for scoped lifetime instances.
+        /// </summary>
+        void BeginScope();
+
+        /// <summary>
+        /// Ends the current scope and clears all scoped instances.
+        /// </summary>
+        void EndScope();
     }
 }
