@@ -12,6 +12,9 @@ namespace TSwiftIoC
         public bool ResolveConstructorDependencies { get; }
         public bool InjectProperties { get; }
         
+        // Factory function support
+        private readonly Func<object>? _customFactory;
+        
         // Performance optimization: Cache compiled factory function
         private Func<object>? _cachedFactory;
         private ConstructorInfo? _cachedConstructor;
@@ -52,10 +55,34 @@ namespace TSwiftIoC
         }
 
         /// <summary>
+        /// Registration with custom factory function
+        /// </summary>
+        public Registration(Type interfaceType, Func<object> factory, Lifetime lifetime)
+        {
+            ImplementationType = interfaceType;
+            Lifetime = lifetime;
+            Instance = null;
+            ResolveConstructorDependencies = false;
+            InjectProperties = false;
+            _customFactory = factory;
+        }
+
+        /// <summary>
+        /// Checks if this registration uses a custom factory
+        /// </summary>
+        public bool HasCustomFactory => _customFactory != null;
+
+        /// <summary>
         /// Creates an instance using cached compiled expression for better performance
         /// </summary>
         public object CreateInstanceFast()
         {
+            // Use custom factory if provided
+            if (_customFactory != null)
+            {
+                return _customFactory();
+            }
+
             if (!ResolveConstructorDependencies && _cachedFactory == null)
             {
                 lock (_factoryLock)

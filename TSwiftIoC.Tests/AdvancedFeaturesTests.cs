@@ -106,5 +106,71 @@ namespace TSwiftIoC.Tests
             Assert.NotNull(service);
             Assert.NotNull(service!.InjectedProperty);
         }
+
+        [Fact]
+        public void Factory_Registration_Creates_Instance()
+        {
+            // Arrange
+            var container = TSwiftContainer.Instance;
+            var callCount = 0;
+            
+            container!.RegisterFactory<IPropertyService>(() =>
+            {
+                callCount++;
+                return new PropertyService();
+            }, lifetime: Lifetime.PerRequest);
+
+            // Act
+            var service1 = container.Resolve<IPropertyService>();
+            var service2 = container.Resolve<IPropertyService>();
+
+            // Assert
+            Assert.NotNull(service1);
+            Assert.NotNull(service2);
+            Assert.Equal(2, callCount); // PerRequest should call factory twice
+        }
+
+        [Fact]
+        public void Factory_Registration_Singleton_Caches_Instance()
+        {
+            // Arrange
+            var container = TSwiftContainer.Instance;
+            var callCount = 0;
+            
+            container!.RegisterFactory<IPropertyService>(() =>
+            {
+                callCount++;
+                return new PropertyService();
+            }, lifetime: Lifetime.Singleton);
+
+            // Act
+            var service1 = container.Resolve<IPropertyService>();
+            var service2 = container.Resolve<IPropertyService>();
+
+            // Assert
+            Assert.NotNull(service1);
+            Assert.NotNull(service2);
+            Assert.Same(service1, service2);
+            Assert.Equal(1, callCount); // Singleton should call factory only once
+        }
+
+        [Fact]
+        public void Factory_Registration_With_Key()
+        {
+            // Arrange
+            var container = TSwiftContainer.Instance;
+            
+            container!.RegisterFactory<IPropertyService>(() => new PropertyService(), key: "factory1");
+            container.RegisterFactory<IPropertyService>(() => new PropertyService(), key: "factory2");
+
+            // Act
+            var service1 = container.Resolve<IPropertyService>("factory1");
+            var service2 = container.Resolve<IPropertyService>("factory2");
+
+            // Assert
+            Assert.NotNull(service1);
+            Assert.NotNull(service2);
+            Assert.NotSame(service1, service2);
+        }
     }
 }

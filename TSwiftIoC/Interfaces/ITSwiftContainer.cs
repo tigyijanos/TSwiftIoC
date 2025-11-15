@@ -85,5 +85,14 @@ namespace TSwiftIoC.Interfaces
         /// Ends the current scope and clears all scoped instances.
         /// </summary>
         void EndScope();
+
+        /// <summary>
+        /// Registers a factory function for creating instances of the specified interface.
+        /// </summary>
+        /// <typeparam name="Interface">The interface type.</typeparam>
+        /// <param name="factory">Factory function to create instances.</param>
+        /// <param name="key">An optional key to distinguish multiple registrations of the same interface.</param>
+        /// <param name="lifetime">The lifetime of the registered type.</param>
+        void RegisterFactory<Interface>(Func<Interface> factory, string? key = null, Lifetime lifetime = Lifetime.Singleton);
     }
 }

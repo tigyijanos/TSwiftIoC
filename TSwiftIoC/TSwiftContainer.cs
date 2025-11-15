@@ -154,6 +154,24 @@ namespace TSwiftIoC
             _scopedInstances.Value = null!;
         }
 
+        public virtual void RegisterFactory<Interface>(Func<Interface> factory, string? key = null, Lifetime lifetime = Lifetime.Singleton)
+        {
+            if (factory == null)
+            {
+                throw new ArgumentNullException(nameof(factory));
+            }
+
+            var registrationKey = new RegistrationKey(typeof(Interface), key);
+            if (_registrations.ContainsKey(registrationKey))
+            {
+                throw new InvalidOperationException($"A factory is already registered for interface {typeof(Interface).Name} with key {key ?? "default"}.");
+            }
+
+            // Wrap the typed factory in an object factory
+            Func<object> objectFactory = () => factory()!;
+            _registrations[registrationKey] = new Registration(typeof(Interface), objectFactory, lifetime);
+        }
+
         protected virtual void Register(Type @interface, Type implementation, Lifetime lifetime, bool resolveConstructorDependencies)
         {
             var registrationKey = new RegistrationKey(@interface, null);
@@ -285,7 +303,12 @@ namespace TSwiftIoC
 
             object? instance;
             
-            if (resolveConstructorDependencies)
+            // Use custom factory if available
+            if (registration.HasCustomFactory)
+            {
+                instance = registration.CreateInstanceFast();
+            }
+            else if (resolveConstructorDependencies)
             {
                 instance = CreateInstanceWithDependencies(registration);
             }
@@ -295,8 +318,8 @@ namespace TSwiftIoC
                 instance = registration.CreateInstanceFast();
             }
 
-            // Inject properties if configured
-            if (instance != null && registration.InjectProperties)
+            // Inject properties if configured and not a factory registration
+            if (instance != null && registration.InjectProperties && !registration.HasCustomFactory)
             {
                 InjectProperties(instance, registration);
             }

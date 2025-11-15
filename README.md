@@ -183,6 +183,38 @@ if (TSwiftContainer.Instance.IsRegistered<IService>("mykey"))
 }
 ```
 
+### Factory Registration
+Register custom factory functions for complete control over instance creation:
+
+```csharp
+// Register a factory function
+TSwiftContainer.Instance.RegisterFactory<IService>(() => 
+{
+    var config = LoadConfiguration();
+    return new Service(config);
+}, lifetime: Lifetime.Singleton);
+
+// Factory with dependencies from container
+TSwiftContainer.Instance.Register<ILogger, ConsoleLogger>();
+TSwiftContainer.Instance.RegisterFactory<IComplexService>(() => 
+{
+    var logger = TSwiftContainer.Instance.Resolve<ILogger>();
+    return new ComplexService(logger, DateTime.Now);
+});
+
+// Singleton factory - called only once
+TSwiftContainer.Instance.RegisterFactory<ICache>(() => 
+{
+    return new MemoryCache(new MemoryCacheOptions());
+}, lifetime: Lifetime.Singleton);
+
+// PerRequest factory - called every time
+TSwiftContainer.Instance.RegisterFactory<IGuid>(() => 
+{
+    return new GuidWrapper(Guid.NewGuid());
+}, lifetime: Lifetime.PerRequest);
+```
+
 ### Circular Dependency Detection
 TSwiftIoC automatically detects circular dependencies:
 
