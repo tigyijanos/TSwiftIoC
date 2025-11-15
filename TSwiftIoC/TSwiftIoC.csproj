@@ -5,11 +5,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    <PackageProjectUrl></PackageProjectUrl>
+    <Version>2.0.0</Version>
+    <PackageProjectUrl>https://github.com/tigyijanos/TSwiftIoC</PackageProjectUrl>
     <RepositoryUrl>https://github.com/tigyijanos/TSwiftIoC</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>ioc;simpleioc;dependency;injection</PackageTags>
-    <Title>TSiwftIoC</Title>
+    <PackageTags>ioc;di;dependency;injection;performance;scoped;property-injection;factory</PackageTags>
+    <Title>TSwiftIoC</Title>
+    <Description>High-performance IoC container with compiled expression trees, scoped lifetimes, property injection, and circular dependency detection. Up to 10x faster instance creation.</Description>
+    <PackageReleaseNotes>v2.0.0: Major performance improvements - compiled expression trees (10x faster), scoped lifetimes, property injection, factory registration, circular dependency detection, ResolveAll/IsRegistered methods</PackageReleaseNotes>
+    <Authors>Janos Tigyi</Authors>
+    <Copyright>Copyright (c) 2024 Janos Tigyi</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
 </Project>
